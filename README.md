@@ -1,3 +1,5 @@
+<h2> GIT HOOKS </h2>
+
 Please find below the details for the same.
 
 1. <a href="/commit-msg">Commit-Msg hook</a> ( for checking if JIRA ticket is present in Commit Message and also checks if the same Ticket Id is prsesnet in Branch Name or not)

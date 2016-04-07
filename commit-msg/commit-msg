@@ -1,0 +1,99 @@
+#!/bin/bash
+
+# gives you a file in which commit message is stored.
+COMMIT_FILE=$1
+echo -e " $COMMIT_FILE"
+#Fetch the commit message to a variable
+COMMIT_MSG=$(cat $1)
+
+branch_name=$(git symbolic-ref --short HEAD |cut -d'/' -f 2) # Extracting proper branch name  for Branching Model
+branch_type=$(git symbolic-ref --short HEAD |cut -d'/' -f 1)
+project_id=$(echo "$branch_name" |cut -d '-' -f1) # Extracting project-id will print project-id Eg ATM
+issueNumber=$(echo "$branch_name" |cut -d '-' -f2) #Extracting Issue Number. will print issue number Eg 5
+IssueId=$project_id-$issueNumber; #Combine both to get IssueId Eg ATM-5
+#COMMIT_MSG=$1;
+
+
+
+# This is the Pattern you want to check within your commit message
+# These are nothing but my JIRA Project Key's which i wanted to be present in my commit Message
+# if you want to add/remove any you can 
+PATTERN="PE|PLAT|ATO|PE|MNW|LOCKMARK|SSPORTAL|ADS";
+
+# to compare this if valid patter present or not
+echo $COMMIT_MSG > commit.txt;
+
+# to check if patter present in branch name or not
+echo $IssueId > branch-id.txt;
+
+#checking if pattern is present in branch name or not
+OutputIssue=$(egrep  -w --max-count=1 -o $PATTERN  branch-id.txt);
+
+#checking if pattern is present in commit msg or not
+OutputMessage=$(egrep  -w --max-count=1 -o $PATTERN  commit.txt);
+
+#echo what output message is 
+echo "Pattern present in commot mesage: $OutputMessage";
+
+# echo what issue id is
+echo "Pattern present in Issue ID: $OutputIssue";
+
+# This will output all these information
+echo "commit Message passed : $COMMIT_MSG \n";
+echo "Branch Name: $branch_name \n";
+echo "Branch Type: $branch_type \n";
+echo "Project ID : $project_id \n";
+echo "JIRA Ticket ID: $IssueId \n ";
+
+
+# Flag variable which will be used for further decision making.
+# if the flag value = 0  means Commit Message does not have any patterns
+# if the flag value = 1 means Valid commit message has valid JIRA Ticket ID.
+# if the flag value = 2 means Commit message does not have valid JIRA Ticket ID.
+Flag=0;
+
+#checking if commit message has PATTERN or NOT
+if [ ! -z "$OutputMessage" ] ; then
+   echo "Valid : commit message has pattern"
+   Flag=1;
+   # Now check if Valid Issue ID present or not 
+   if [ ! -z "$OutputIssue" ] ; then
+   	echo "Valid: Valid Issues ID present in Branch name"; 
+   	echo "Now compare if Issues ID matches in Commit Message";
+   	OutputCompare=$(egrep  -w --max-count=1 -o $IssueId  commit.txt);
+   	if [ ! -z  "$OutputCompare" ] ; then
+   		echo "Valid: Commit Message has valid JIRA Ticket ID";
+		Flag=1;   		
+	else
+		echo "Invalid: Commit Message Does not have Valid JIRA Ticket ID";
+		Flag=2;
+	fi
+   fi
+else 
+   echo "Invalid: No commit message has no PAttern"
+   Flag=0;
+fi
+
+
+# Adding newly created files to GIT Ignore
+#echo "commit.txt" >> .gitignore;
+#echo "branch-id.txt" >> .gitignore;
+#git add .gitignore;
+rm commit.txt;
+rm branch-id.txt;
+
+# Now depending upon the flag value you have to take decision if you have to allow user to commit or not
+# Flag value = 2 ; Not Allow user to commit
+if [ 2  -eq  "$Flag" ] ; then
+	echo "-------------- You Cannot Commit ----------------- ";
+	echo "---------------Ticket ID present within Branch Name is not matching with Commit Message ----------\n";
+	exit 1;
+elif [ "1" -eq "$Flag" ] ; then
+	echo "-------------------- Commit Message has valid JIRA Ticket ID -------------------\n";
+	echo "--------------------GIT will allow you to commit------------------------\n"; 
+else
+	echo "---------------------- You Cannot Commit --------------------------\n";
+	echo "--------------------- Commit Message has no JIRA Ticket ID ----------------------\n";
+	exit 1;
+fi
+

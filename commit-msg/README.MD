@@ -1,7 +1,7 @@
- GIT HOOK For checking if Commit message has Valid JIRA Ticket ID
+ <h3> Git Commit-message hook for checking JIRA Ticket ID </h3>
 
 
-Please find below the features that are provided by Commit Message hook.
+<h5>Please find below the features that are provided by Commit Message hook.</h5>
 
 It will check following things and allow to commit the code
 
